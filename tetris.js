@@ -41,8 +41,8 @@ const shapes=[
 ]
 const colors=[
     'rgb(255, 0, 0)',
-    'rgb(187, 0, 0)',
-    'rgb(255, 153, 0)',
+    'rgb(255, 0, 0, 0.5)',
+    // 'rgb(255, 153, 0)',
 ]
 const gamesEl=document.getElementById('games');
 const scoreEl=document.getElementById('scoreboard');
@@ -53,7 +53,7 @@ class Piece{
     constructor(shape,ctx){
         this.shape = shape;
         this.x = 3*blockSideLength;
-        this.y = -1*blockSideLength;
+        this.y = 0;
         this.ctx = ctx;
         this.color = colors[Math.floor(Math.random()*colors.length)];
     }
@@ -98,12 +98,32 @@ class Board{
             }
         }
     }
+    renderGameState(){
+        for(let i=0;i<this.board.length;i++){
+            for(let j=0;j<this.board[i].length;j++){
+                let cell = this.board[i][j];
+                this.ctx.fillStyle = 'yellow';
+                this.ctx.fillRect(j*blockSideLength,i*blockSideLength,blockSideLength,blockSideLength);
+            }
+        }
+        if(this.fallingPiece!==null){
+            this.fallingPiece.renderPiece();
+        }
+    }
+    moveDown(){
+        this.fallingPiece.renderPiece();
+        this.fallingPiece.y+=blockSideLength;
+    }
 }
 function newGameState(){
-    const piece=new Piece(shapes[0],ctx);
     const board=new Board(ctx);
-    board.renderBoard();
-    piece.renderPiece();
+    if(board.fallingPiece===null){
+        const piece=new Piece(shapes[2],ctx);
+        let rand=Math.floor(Math.random()*shapes.length);
+        board.fallingPiece=piece;
+
+        board.moveDown();
+    }
     requestAnimationFrame(newGameState);
 }
 newGameState();
