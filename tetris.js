@@ -2,6 +2,7 @@ const gameClock = 1000;
 const blockSideLength = 20;
 const blockWidth = 10;
 const blockHeight = 20;
+const scoreWorth=10;
 const shapes=[
     [
         [0,0,0,0],
@@ -40,31 +41,36 @@ const shapes=[
     ]
 ]
 const colors=[
-    'rgb(255, 0, 0)',
-    'rgb(255, 0, 0, 0.5)',
-    // 'rgb(255, 153, 0)',
+    '#000000',
+    '#FF0000',
+    '#00FF00',
+    'rgb(0, 103, 147)',
+    '#FFFF00',
+    '#00FFFF',
+    '#10FF01',
+    '#F000FF'
 ]
 const gamesEl=document.getElementById('games');
 const scoreEl=document.getElementById('scoreboard');
 const ctx=gamesEl.getContext('2d');
-gamesEl.width=blockSideLength*blockWidth;
-gamesEl.height=blockSideLength*blockHeight;
+gamesEl.width=window.innerWidth;
+gamesEl.height=window.innerHeight;
+ctx.scale(blockSideLength,blockSideLength);
 class Piece{
     constructor(shape,ctx){
         this.shape = shape;
-        this.x = 3*blockSideLength;
+        this.x = Math.floor(blockWidth / 2);
         this.y = 0;
         this.ctx = ctx;
-        this.color = colors[Math.floor(Math.random()*colors.length)];
     }
     renderPiece(){
         for(let y=0;y<this.shape.length;y++){
             for(let x=0;x<this.shape[y].length;x++){
                 if(this.shape[y][x]!==0){
-                    this.ctx.fillStyle = this.color;
-                    this.ctx.fillRect(this.x+x*blockSideLength,this.y+y*blockSideLength,blockSideLength,blockSideLength);
-                    this.ctx.strokeStyle = 'black';
-                    this.ctx.strokeRect(this.x+x*blockSideLength,this.y+y*blockSideLength,blockSideLength,blockSideLength);
+                    this.ctx.fillStyle = 'blue';
+                    this.ctx.fillRect(this.x+x,this.y+y,1,1);
+                    this.ctx.strokeStyle = 'red';
+                    this.ctx.strokeRect(this.x+x,this.y+y,1,1);
                 }
             }
         }
@@ -78,32 +84,42 @@ class Board{
     }
     createBoard(){
         let board = [];
-        for(let y=0;y<blockHeight;y++){
-            board[y] = [];
-            for(let x=0;x<blockWidth;x++){
-                board[y][x] = 0;
+        for(var i=0;i<blockHeight;i++){
+            board.push([]);
+            for(var j=0;j<blockWidth;j++){
+                board[board.length-1].push(0);
             }
         }
         return board;
     }
-    renderBoard(){
-        for(let y=0;y<blockHeight;y++){
-            for(let x=0;x<blockWidth;x++){
-                if(this.board[y][x]===0){
-                    this.ctx.fillStyle = 'black';
-                    this.ctx.fillRect(x*blockSideLength,y*blockSideLength,blockSideLength,blockSideLength);
-                    this.ctx.strokeStyle = 'grey';
-                    this.ctx.strokeRect(x*blockSideLength,y*blockSideLength,blockSideLength,blockSideLength);
+    collision(x,y){
+        const shape=this.fallingPiece.shape;
+        const n=shape.length;
+        for(let i=0;i<n;i++){
+            for(let j=0;j<n;j++){
+                if(shape[i][j]>0){
+                    let p=x+j;
+                    let q=y+i;
+                    if(p>=0&&p<blockWidth&&q<blockHeight){
+                        if(this.board[q][p]>0){
+                            return true;
+                        }
+                    }else{
+                        return true;
+                    }
                 }
             }
         }
+        return false;
     }
     renderGameState(){
         for(let i=0;i<this.board.length;i++){
             for(let j=0;j<this.board[i].length;j++){
                 let cell = this.board[i][j];
-                this.ctx.fillStyle = 'yellow';
-                this.ctx.fillRect(j*blockSideLength,i*blockSideLength,blockSideLength,blockSideLength);
+                this.ctx.fillStyle = colors[cell];
+                this.ctx.fillRect(j,i,1,1);
+                this.ctx.strokeStyle = 'grey';
+                this.ctx.strokeRect(j,i,1,1);
             }
         }
         if(this.fallingPiece!==null){
@@ -111,19 +127,56 @@ class Board{
         }
     }
     moveDown(){
-        this.fallingPiece.renderPiece();
-        this.fallingPiece.y+=blockSideLength;
+        if(this.fallingPiece===null){
+            this.renderGameState();
+        }else if(this.collision(this.fallingPiece.x,this.fallingPiece.y+1)){
+            const shape=this.fallingPiece.shape;
+            const x=this.fallingPiece.x;
+            const y=this.fallingPiece.y;
+            shape.map((row,i)=>{
+                row.map((cell,j)=>{
+                    let p=x+j;
+                    let q=y+i;
+                    if(p>=0&&p<blockWidth&&q<blockHeight&&cell>0){
+                        this.board[q][p]=shape[i][j];
+                    }
+                })
+            });
+            this.fallingPiece=null;
+        }else{
+            this.fallingPiece.y+=blockSideLength;
+        }
+        this.renderGameState();
     }
 }
+const board=new Board(ctx);
 function newGameState(){
-    const board=new Board(ctx);
+    fullSend();
     if(board.fallingPiece===null){
-        const piece=new Piece(shapes[2],ctx);
-        let rand=Math.floor(Math.random()*shapes.length);
+        var rand=Math.floor(Math.random()*shapes.length);
+        const piece=new Piece(shapes[rand],ctx);
         board.fallingPiece=piece;
-
+        board.moveDown();
+    }else{
         board.moveDown();
     }
     requestAnimationFrame(newGameState);
+}
+function fullSend(){
+    const allFilled=(row)=>{
+        for(let x of row){
+            if(x===0){
+                return false;
+            }
+        }
+        return true;
+    }
+    for(let i=0;i<board.board.length;i++){
+        if(allFilled(board.board[i])){
+            score+=scoreWorth;
+           model.grid.splice(i,1);
+           model.grid.unshift(new Array(10).fill(0));
+        }
+    }
 }
 newGameState();
