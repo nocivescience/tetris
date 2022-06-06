@@ -1,7 +1,7 @@
 const gameClock = 1000;
-const blockSideLength = 20;
-const blockWidth = 10;
-const blockHeight = 20;
+const blockSideLength = 10;
+const blockWidth = 30;
+const blockHeight = 15;
 const scoreWorth=10;
 const shapes=[
     [
@@ -50,30 +50,24 @@ const colors=[
     '#10FF01',
     '#F000FF'
 ]
-const gamesEl=document.getElementById('games');
-const scoreEl=document.getElementById('scoreboard');
-const ctx=gamesEl.getContext('2d');
-gamesEl.width=window.innerWidth;
-gamesEl.height=window.innerHeight;
-ctx.scale(blockSideLength,blockSideLength);
 class Piece{
     constructor(shape,ctx){
         this.shape = shape;
+        this.ctx = ctx;
         this.x = Math.floor(blockWidth / 2);
         this.y = 0;
-        this.ctx = ctx;
     }
     renderPiece(){
-        for(let y=0;y<this.shape.length;y++){
-            for(let x=0;x<this.shape[y].length;x++){
-                if(this.shape[y][x]!==0){
-                    this.ctx.fillStyle = 'blue';
-                    this.ctx.fillRect(this.x+x,this.y+y,1,1);
-                    this.ctx.strokeStyle = 'red';
-                    this.ctx.strokeRect(this.x+x,this.y+y,1,1);
+        this.shape.map((row,i)=>{
+            row.map((block,j)=>{
+                if(block>0){
+                    this.ctx.fillStyle=colors[block];
+                    this.ctx.fillRect(this.x+j,this.y+i,1,1);
+                    // this.ctx.strokeStyle='black';
+                    // this.ctx.strokeRect(this.x+j,this.y+i,1,1);
                 }
-            }
-        }
+            })
+        });
     }
 }
 class Board{
@@ -118,8 +112,8 @@ class Board{
                 let cell = this.board[i][j];
                 this.ctx.fillStyle = colors[cell];
                 this.ctx.fillRect(j,i,1,1);
-                this.ctx.strokeStyle = 'grey';
-                this.ctx.strokeRect(j,i,1,1);
+                // this.ctx.strokeStyle = 'grey';
+                // this.ctx.strokeRect(j,i,1,1);
             }
         }
         if(this.fallingPiece!==null){
@@ -144,11 +138,17 @@ class Board{
             });
             this.fallingPiece=null;
         }else{
-            this.fallingPiece.y+=blockSideLength;
+            this.fallingPiece.y+=1;
         }
         this.renderGameState();
     }
 }
+const gamesEl=document.getElementById('games');
+const scoreEl=document.getElementById('scoreboard');
+const ctx=gamesEl.getContext('2d');
+gamesEl.width=blockWidth*blockSideLength;
+gamesEl.height=blockHeight*blockSideLength;
+ctx.scale(blockSideLength,blockSideLength);
 const board=new Board(ctx);
 function newGameState(){
     fullSend();
@@ -160,7 +160,6 @@ function newGameState(){
     }else{
         board.moveDown();
     }
-    requestAnimationFrame(newGameState);
 }
 function fullSend(){
     const allFilled=(row)=>{
@@ -179,4 +178,4 @@ function fullSend(){
         }
     }
 }
-newGameState();
+setInterval(newGameState,gameClock);
